@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios from 'axios';
+import Card from "./Card";
 
 const Deck = () => {
   const [deck, setDeck] = useState(null);
@@ -22,7 +23,10 @@ const Deck = () => {
   return (
     <div>
         {deck ? <button onClick={setCard}>Get Deck</button> : <button onClick={setDeck}>Draw Card</button>}
+        <Card props={card}/>
             
     </div>
   );
 };
+
+export default Deck;
