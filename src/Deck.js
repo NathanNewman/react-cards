@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Card from "./Card";
 
@@ -6,7 +6,8 @@ const Deck = () => {
   const [deck, setDeck] = useState(null);
   const [card, setCard] = useState(null);
   const [cardCount, setCardCount] = useState(1);
-  const [autoDraw, setAutoDraw] = useState(0);
+  const [autoDraw, setAutoDraw] = useState(false);
+  const timerId = useRef();
 
   // Effect for drawing one card.
   useEffect(() => {
@@ -21,19 +22,27 @@ const Deck = () => {
 
   // Effect for autoDraw
   useEffect(() => {
-    // if autoDraw is set to 1, set interval to add to autoDraw each second.
-    if (autoDraw === 1) {
-      setInterval(() => {
-        setAutoDraw(autoDraw + 1);
-      }, 1000);
+    // sets inteveral when autoDraw is on, but also makes sure there is only one interval 
+    if (autoDraw && !timerId.current) {
+      timerId.current = setInterval(() => {
+        async function autoDrawCard() {
+          const res = await axios.get(
+            `https://deckofcardsapi.com/api/deck/${deck}/draw/?count=1`
+          );
+          setCard(res.data.cards[0]);
+          setCardCount(cardCount + 1);
+        }
+        autoDrawCard();
+      }, 1000); 
     }
-    // If autoDraw is greater than one, draw a card.
-    if (autoDraw > 1) {
-      handleDrawCard();
+    // resets deck if deck is empty.
+    if (cardCount > 52) {
+      setDeck(null);
+      setCardCount(1);
     }
-  }, [autoDraw]);
+  }, [autoDraw, deck, cardCount]);
 
-  // Handles drawing a card for both draw and auto draw.
+  // Handles drawing a single card. Resets deck when deck is empty.
   const handleDrawCard = async () => {
     if (cardCount > 52) {
       setDeck(null);
@@ -47,18 +56,22 @@ const Deck = () => {
     }
   };
 
-  // if autoDraw is falsey/zero, setAutoDraw to one which starts interval. if autoDraw is truthy/not zero
-  // set autoDraw to zero.
+  // changes autoDraw to true.
   const handleAutoDraw = async () => {
-    autoDraw ? setAutoDraw(0) : setAutoDraw(1);
+    setAutoDraw(true);
   };
+
+  // stops the interval that handles auto draw.
+  const stopInterval = () => {
+    clearInterval(timerId.current);
+    setAutoDraw(false);
+  }
 
   return (
     <div>
       <button onClick={handleDrawCard}>Draw Card</button>
-      <button onClick={handleAutoDraw}>Auto Draw</button>
+      {autoDraw ? <button onClick={stopInterval}>Stop Drawing</button> : <button onClick={handleAutoDraw}>Auto Draw</button>}
       {card ? <Card card={card} /> : <p>Play Card</p>}
-      {console.log(autoDraw)}
     </div>
   );
 };
