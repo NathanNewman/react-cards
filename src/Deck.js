@@ -5,49 +5,60 @@ import Card from "./Card";
 const Deck = () => {
   const [deck, setDeck] = useState(null);
   const [card, setCard] = useState(null);
-  const [drawURL, setDrawURL] = useState(null);
+  const [cardCount, setCardCount] = useState(1);
+  const [autoDraw, setAutoDraw] = useState(0);
 
-  let count;
+  // Effect for drawing one card.
   useEffect(() => {
-    async function fetchDeck() {
-      const res = await axios.get("https://deckofcardsapi.com/api/deck/new/");
-      setDeck(res.data.deck_id);
-    }
-    fetchDeck();
-  }, [setDeck]);
-
-  useEffect(() => {
-    console.log(drawURL[0]);
-    if (drawURL[0]) {
-      async function fetchCard() {
-        const res = await axios.get(drawURL[0]);
-        setCard(res.data.cards[0]);
+    if (!deck) {
+      async function fetchDeck() {
+        const res = await axios.get("https://deckofcardsapi.com/api/deck/new/");
+        setDeck(res.data.deck_id);
       }
-
-      fetchCard();
+      fetchDeck();
     }
-  }, [drawURL]);
+  }, [deck]);
 
-  const handleDrawCard = () => {
-    count += 1;
-    setDrawURL([
-      `https://deckofcardsapi.com/api/deck/${deck}/draw/?count=1`,
-      count,
-    ]);
+  // Effect for autoDraw
+  useEffect(() => {
+    // if autoDraw is set to 1, set interval to add to autoDraw each second.
+    if (autoDraw === 1) {
+      setInterval(() => {
+        setAutoDraw(autoDraw + 1);
+      }, 1000);
+    }
+    // If autoDraw is greater than one, draw a card.
+    if (autoDraw > 1) {
+      handleDrawCard();
+    }
+  }, [autoDraw]);
+
+  // Handles drawing a card for both draw and auto draw.
+  const handleDrawCard = async () => {
+    if (cardCount > 52) {
+      setDeck(null);
+      setCardCount(1);
+    } else {
+      const res = await axios.get(
+        `https://deckofcardsapi.com/api/deck/${deck}/draw/?count=1`
+      );
+      setCard(res.data.cards[0]);
+      setCardCount(cardCount + 1);
+    }
   };
 
-  const handleGetDeck = () => {
-    setDeck(null);
+  // if autoDraw is falsey/zero, setAutoDraw to one which starts interval. if autoDraw is truthy/not zero
+  // set autoDraw to zero.
+  const handleAutoDraw = async () => {
+    autoDraw ? setAutoDraw(0) : setAutoDraw(1);
   };
 
   return (
     <div>
-      {deck ? (
-        <button onClick={handleDrawCard}>Draw Card</button>
-      ) : (
-        <button onClick={handleGetDeck}>Get Deck</button>
-      )}
+      <button onClick={handleDrawCard}>Draw Card</button>
+      <button onClick={handleAutoDraw}>Auto Draw</button>
       {card ? <Card card={card} /> : <p>Play Card</p>}
+      {console.log(autoDraw)}
     </div>
   );
 };
