@@ -64,6 +64,7 @@ const Deck = () => {
   // stops the interval that handles auto draw.
   const stopInterval = () => {
     clearInterval(timerId.current);
+    timerId.current = null;
     setAutoDraw(false);
   }
 
